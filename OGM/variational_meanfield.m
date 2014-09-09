@@ -1,17 +1,17 @@
-close all
-clc
-clear
-image = imread('C:\Users\Lisa\Documents\Matlab\images\map6_x.png');
+function [] = variational_meanfield(imageFile,trainedEdgePot, imageName)
+
+image = imread(imageFile);
 grayImage = rgb2gray(image);
-[nCols nRows] = size(grayImage);
+[nCols, nRows] = size(grayImage);
 figure;
 imagesc(image);
+title(imageName);
 
 %% Node potential
 twoDimensionImage = reshape(grayImage, nCols * nRows, 1);
 normalizedImage = double(twoDimensionImage)./255;
-nodePot = [(1-normalizedImage) normalizedImage];
 nNodes = nCols * nRows;
+nodePot = [(1-normalizedImage) normalizedImage];
 nStates = 2;
 
 %% Adjacent matrix
@@ -28,13 +28,15 @@ adj = adj + adj';
 edgeStruct = UGM_makeEdgeStruct(adj,nStates);
 
 %% Edge potential
-edgePot = repmat([3.0676 1;1 3.0676],[1 1 edgeStruct.nEdges]);
+edgePot = repmat(trainedEdgePot,[1 1 edgeStruct.nEdges]);
 
 %% Mean field
 fprintf('Running Mean Field Inference...\n');
-[nodeBelMF,edgeBelMF,logZMF] = UGM_Infer_MeanField(nodePot,edgePot,edgeStruct);
+fprintf('Edge potential: ');
+trainedEdgePot
+[nodeBelMF, edgeBelMF, logZMF] = UGM_Infer_MeanField(nodePot,edgePot,edgeStruct);
 
 figure;
 imagesc(reshape(nodeBelMF(:,2),nCols,nRows));
 colormap gray
-title('Mean Field Estimates of Marginals');
+title(strcat('Mean Field Estimates of Marginals', imageName));

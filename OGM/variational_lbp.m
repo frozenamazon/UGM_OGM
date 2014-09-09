@@ -1,15 +1,14 @@
-close all
-clc
-clear
-image = imread('C:\Users\Lisa\Documents\Matlab\images\map6_x.png');
+function [] = variational_lbp(imageFile,trainedEdgePot, imageName)
+
+image = imread(imageFile);
 grayImage = rgb2gray(image);
-[nCols nRows] = size(grayImage);
+[nCols, nRows] = size(grayImage);
 
 %% Node potential
 twoDimensionImage = reshape(grayImage, nCols * nRows, 1);
 normalizedImage = double(twoDimensionImage)./255;
-nodePot = [(1-normalizedImage) normalizedImage];
 nNodes = nCols * nRows;
+nodePot = [(1-normalizedImage) ones(nNodes,1)];
 nStates = 2;
 
 %% Adjacent matrix
@@ -26,36 +25,17 @@ adj = adj + adj';
 edgeStruct = UGM_makeEdgeStruct(adj,nStates);
 
 %% Edge potential
-edgePot = repmat([3.0676 1;1 3.0676],[1 1 edgeStruct.nEdges]);
+edgePot = repmat(trainedEdgePot,[1 1 edgeStruct.nEdges]);
 
 %% Loopy Belief Propagation
 
 fprintf('Running loopy belief propagation for inference...\n');
+fprintf('Edge potential: ');
+trainedEdgePot
 [nodeBelLBP,edgeBelLBP,logZLBP] = UGM_Infer_LBP(nodePot,edgePot,edgeStruct);
 
 figure;
 imagesc(reshape(nodeBelLBP(:,2),nCols,nRows));
 colormap gray
-title('Loopy Belief Propagation Estimates of Marginals');
+title(strcat('Loopy Belief Propagation Estimates of Marginals', imageName));
 fprintf('(paused)\n');
-pause
-
-fprintf('Running loopy belief propagation and computing max of marginals\n');
-maxOfMarginalsLBPdecode = UGM_Decode_MaxOfMarginals(nodePot,edgePot,edgeStruct,@UGM_Infer_LBP);
-
-figure;
-imagesc(reshape(maxOfMarginalsLBPdecode,nCols,nRows));
-colormap gray
-title('Max of Loopy Belief Propagation Marginals');
-fprintf('(paused)\n');
-pause
-
-fprintf('Running loopy belief propagation for decoding...\n');
-decodeLBP = UGM_Decode_LBP(nodePot,edgePot,edgeStruct);
-
-figure;
-imagesc(reshape(decodeLBP,nCols,nRows));
-colormap gray
-title('Loopy Belief Propagation Decoding');
-fprintf('(paused)\n');
-pause
